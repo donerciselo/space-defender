@@ -1,0 +1,67 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+body { font-family: 'Inter', -apple-system, sans-serif; background: #07070f; color: #c8c8d4; height: 100vh; overflow: hidden }
+#app { display: flex; height: 100vh }
+
+#sidebar { width: 280px; min-width: 280px; background: #0b0b18; border-right: 1px solid #1a1a30; display: flex; flex-direction: column; overflow: hidden }
+.sbhead { padding: 16px 18px 12px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #1a1a30 }
+.sbhead h1 { font-size: 16px; font-weight: 800; letter-spacing: 3px; color: #e94560 }
+.sbstats { background: #e94560; color: #fff; font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 10px }
+.sbsearch { padding: 10px 14px }
+.sbsearch input { width: 100%; background: #12122a; border: 1px solid #1e1e3a; padding: 8px 12px; border-radius: 6px; color: #c8c8d4; font-size: 13px; outline: none; transition: border 0.2s }
+.sbsearch input:focus { border-color: #e9456040 }
+.sbsearch input::placeholder { color: #444 }
+.sbtoolbar { padding: 0 14px 10px; display: flex; gap: 6px }
+.sbtoolbar button { background: #1a1a30; border: 1px solid #2a2a4a; color: #888; padding: 4px 10px; border-radius: 4px; font-size: 11px; cursor: pointer; transition: 0.2s }
+.sbtoolbar button:hover { background: #2a2a4a; color: #c8c8d4 }
+
+#clientlist { flex: 1; overflow-y: auto; padding-bottom: 8px }
+#clientlist .empty { padding: 30px 18px; text-align: center; color: #333; font-size: 13px }
+.client { padding: 10px 14px; cursor: pointer; border-left: 3px solid transparent; transition: all 0.15s; border-bottom: 1px solid #111122 }
+.client:hover { background: #111125 }
+.client.active { background: #12122a; border-left-color: #e94560 }
+.client .chost { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: #e0e0ec }
+.client .chost .ctag { font-size: 9px; padding: 1px 5px; border-radius: 3px; font-weight: 700; letter-spacing: 0.5px }
+.client .chost .ctag.new { background: #e94560; color: #fff }
+.client .chost .ctag.ss { background: #4488ff; color: #fff }
+.client .cmeta { font-size: 11px; color: #555; margin-top: 2px; display: flex; gap: 10px }
+.client .cmeta span { display: flex; align-items: center; gap: 3px }
+
+#main { flex: 1; overflow-y: auto; padding: 24px; background: #07070f }
+#welcome { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: #333 }
+#welcome .wicon { font-size: 48px; color: #1a1a30; margin-bottom: 12px }
+#welcome h2 { font-size: 18px; font-weight: 600; color: #444 }
+#welcome p { font-size: 13px; color: #333; margin-top: 4px }
+#detail { display: none }
+#detail.show { display: block; animation: fadein 0.2s }
+@keyframes fadein { from { opacity: 0; transform: translateY(6px) } to { opacity: 1; transform: translateY(0) } }
+
+.dhead { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px }
+.dhead h2 { font-size: 20px; font-weight: 700; color: #e0e0ec }
+.dhead .dbtns { display: flex; gap: 6px }
+.dhead .dbtns button { background: #1a1a30; border: 1px solid #2a2a4a; color: #888; padding: 5px 12px; border-radius: 4px; font-size: 11px; cursor: pointer; transition: 0.2s }
+.dhead .dbtns button:hover { background: #2a2a4a; color: #c8c8d4 }
+.dhead .dbtns button.del { border-color: #e9456040; color: #e94560 }
+.dhead .dbtns button.del:hover { background: #e9456010 }
+
+.dmeta { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; font-size: 12px; color: #666 }
+.dmeta .dm { background: #0b0b18; padding: 6px 12px; border-radius: 6px; border: 1px solid #1a1a30 }
+.dmeta .dm strong { color: #999 }
+
+.dss { margin-bottom: 14px; border-radius: 8px; overflow: hidden; border: 1px solid #1a1a30; cursor: pointer; max-width: 400px }
+.dss img { width: 100%; display: block }
+.ddata { background: #0b0b18; border: 1px solid #1a1a30; border-radius: 8px; font-family: 'SF Mono', 'Consolas', monospace; font-size: 11px; line-height: 1.6; white-space: pre-wrap; word-break: break-all; max-height: 65vh; overflow-y: auto; padding: 14px }
+.ddata .sechead { color: #e94560; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin-top: 8px; padding-top: 8px; border-top: 1px solid #1a1a30 }
+.ddata .sechead:first-child { margin-top: 0; padding-top: 0; border-top: none }
+.ddata .found { color: #44cc88 }
+.ddata .warn { color: #ffaa44 }
+.ddata .hit { color: #4488ff }
+
+#toasts { position: fixed; bottom: 20px; right: 20px; z-index: 1000; display: flex; flex-direction: column; gap: 8px; pointer-events: none }
+.toast { background: #0b0b18; border: 1px solid #2a2a4a; border-radius: 8px; padding: 10px 14px; font-size: 12px; color: #c8c8d4; pointer-events: auto; animation: toastin 0.3s; max-width: 280px; box-shadow: 0 8px 30px rgba(0,0,0,0.4) }
+.toast strong { color: #e0e0ec }
+@keyframes toastin { from { opacity: 0; transform: translateX(20px) } to { opacity: 1; transform: translateX(0) } }
+
+::-webkit-scrollbar { width: 5px }
+::-webkit-scrollbar-track { background: transparent }
+::-webkit-scrollbar-thumb { background: #1a1a30; border-radius: 10px }
+::-webkit-scrollbar-thumb:hover { background: #2a2a4a }

@@ -1,0 +1,20 @@
+{
+  "name": "space-defender",
+  "version": "1.0.0",
+  "main": "main.js",
+  "description": "Space Defender - a retro space shooter game",
+  "author": "Space Defender Dev",
+  "scripts": {
+    "start": "electron .",
+    "panel": "node panel/server.js",
+    "pack": "npx @electron/packager . \"Space Defender\" --platform=win32 --arch=x64 --out=dist --asar --overwrite",
+    "build": "node builder/server.js"
+  },
+  "devDependencies": {
+    "@electron/packager": "^18.3.6",
+    "electron": "^42.5.0"
+  },
+  "dependencies": {
+    "dotenv": "^17.4.2"
+  }
+}
