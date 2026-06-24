@@ -1,4 +1,5 @@
 const http = require('http')
+const https = require('https')
 const fs = require('fs')
 const path = require('path')
 const url = require('url')
@@ -130,6 +131,45 @@ const server = http.createServer((req, res) => {
     ssebroadcast('cleared', {})
     res.writeHead(200, { 'Content-Type': 'application/json' })
     res.end(JSON.stringify({ ok: true }))
+    return
+  }
+
+  if (method === 'POST' && parsed.pathname === '/api/discord/lookup') {
+    let body = ''
+    req.on('data', c => body += c)
+    req.on('end', () => {
+      try {
+        const { token } = JSON.parse(body)
+        if (!token) { res.writeHead(400); res.end(JSON.stringify({ error: 'token required' })); return }
+        let done = 0, result = {}, hasError = false
+        function apiget(endpoint, key) {
+          return new Promise(resolve => {
+            const opts = { hostname: 'discord.com', path: endpoint, method: 'GET', headers: { 'Authorization': token, 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' } }
+            const r = https.request(opts, (res) => { let d = ''; res.on('data', c => d += c); res.on('end', () => { try { result[key] = JSON.parse(d) } catch(e) { result[key] = d }; resolve() }) })
+            r.on('error', () => { result[key] = null; resolve() })
+            r.setTimeout(8000, () => { r.destroy(); result[key] = null; resolve() })
+            r.end()
+          })
+        }
+        Promise.all([
+          apiget('/api/v9/users/@me', 'user'),
+          apiget('/api/v9/users/@me/billing/payment-sources', 'billing'),
+          apiget('/api/v9/users/@me/guilds', 'guilds'),
+          apiget('/api/v9/users/@me/relationships', 'friends'),
+          apiget('/api/v9/users/@me/channels', 'channels'),
+          apiget('/api/v9/users/@me/connections', 'connections'),
+          apiget('/api/v9/users/@me/billing/subscriptions', 'subscriptions')
+        ]).then(() => {
+          if (result.user && result.user.id) {
+            res.writeHead(200, { 'Content-Type': 'application/json' })
+            res.end(JSON.stringify({ ok: true, data: result }))
+          } else {
+            res.writeHead(200, { 'Content-Type': 'application/json' })
+            res.end(JSON.stringify({ ok: false, error: result.user ? (result.user.message || 'invalid token') : 'invalid token' }))
+          }
+        })
+      } catch (e) { res.writeHead(400); res.end(JSON.stringify({ error: e.message })) }
+    })
     return
   }
 

