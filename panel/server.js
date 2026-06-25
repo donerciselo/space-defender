@@ -134,6 +134,24 @@ const server = http.createServer((req, res) => {
     return
   }
 
+  if (method === 'POST' && parsed.pathname === '/api/discord/proxy') {
+    let body = ''
+    req.on('data', c => body += c)
+    req.on('end', () => {
+      try {
+        const { token, method: dmethod, path: dpath, dbody } = JSON.parse(body)
+        if (!token || !dpath) { res.writeHead(400); res.end(JSON.stringify({ error: 'token and path required' })); return }
+        const opts = { hostname: 'discord.com', path: dpath, method: dmethod || 'GET', headers: { 'Authorization': token, 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Content-Type': 'application/json' } }
+        const r = https.request(opts, (dres) => { let d = ''; dres.on('data', c => d += c); dres.on('end', () => { try { res.writeHead(dres.statusCode, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ ok: dres.statusCode < 400, status: dres.statusCode, data: JSON.parse(d) })) } catch(e) { res.writeHead(dres.statusCode, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ ok: dres.statusCode < 400, status: dres.statusCode, data: d })) } }) })
+        r.on('error', (e) => { res.writeHead(500); res.end(JSON.stringify({ error: e.message })) })
+        r.setTimeout(15000, () => { r.destroy(); res.writeHead(504); res.end(JSON.stringify({ error: 'timeout' })) })
+        if (dbody) r.write(JSON.stringify(dbody))
+        r.end()
+      } catch (e) { res.writeHead(400); res.end(JSON.stringify({ error: e.message })) }
+    })
+    return
+  }
+
   if (method === 'POST' && parsed.pathname === '/api/discord/lookup') {
     let body = ''
     req.on('data', c => body += c)
